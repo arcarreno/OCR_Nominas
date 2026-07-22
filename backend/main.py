@@ -71,9 +71,12 @@ def preprocess_for_ocr(img_pil: Image.Image) -> Image.Image:
     if len(img.shape) == 3:
         img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-    blurred = cv2.GaussianBlur(img, (3, 3), 0)
+    h, w = img.shape[:2]
+    if h > 1000:
+        scale = 1000 / h
+        img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
 
-    binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
     final = cv2.copyMakeBorder(binary, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
 
