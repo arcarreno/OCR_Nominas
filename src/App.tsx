@@ -104,6 +104,8 @@ function App() {
     }
   }, [])
 
+  const API_URL = import.meta.env.VITE_API_URL || ''
+
   const processPDF = async () => {
     if (!file) return
     setLoading(true)
@@ -124,7 +126,6 @@ function App() {
       formData.append('file', file)
       if (pages.trim()) formData.append('pages', pages.trim())
 
-      const API_URL = import.meta.env.VITE_API_URL || ''
       const url = new URL(`${API_URL}/api/ocr/process`)
       if (pages.trim()) url.searchParams.set('pages', pages.trim())
 
@@ -150,7 +151,6 @@ function App() {
 
       setResult(data)
 
-      const API_URL = import.meta.env.VITE_API_URL || ''
       const valResponse = await fetch(`${API_URL}/api/ocr/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
