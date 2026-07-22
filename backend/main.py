@@ -22,7 +22,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+_tesseract = shutil.which('tesseract')
+if _tesseract:
+    pytesseract.pytesseract.tesseract_cmd = _tesseract
+else:
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 app = FastAPI(title="OCR Recibos API", version="1.0.0")
 
