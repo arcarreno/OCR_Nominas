@@ -19,7 +19,8 @@ from PIL import Image
 from PyPDF2 import PdfReader
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -330,6 +331,17 @@ async def validate_ocr(recibos: list[dict]):
     }
 
 
+import os
+
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+else:
+    if os.path.isdir(STATIC_DIR):
+        app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
+
+        @app.get("/{path:path}")
+        async def serve_spa(path: str):
+            return FileResponse(os.path.join(STATIC_DIR, "index.html"))

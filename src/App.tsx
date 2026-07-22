@@ -124,7 +124,8 @@ function App() {
       formData.append('file', file)
       if (pages.trim()) formData.append('pages', pages.trim())
 
-      const url = new URL('http://localhost:8000/api/ocr/process')
+      const API_URL = import.meta.env.VITE_API_URL || ''
+      const url = new URL(`${API_URL}/api/ocr/process`)
       if (pages.trim()) url.searchParams.set('pages', pages.trim())
 
       const response = await fetch(url.toString(), {
@@ -149,7 +150,8 @@ function App() {
 
       setResult(data)
 
-      const valResponse = await fetch('http://localhost:8000/api/ocr/validate', {
+      const API_URL = import.meta.env.VITE_API_URL || ''
+      const valResponse = await fetch(`${API_URL}/api/ocr/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data.recibos),
