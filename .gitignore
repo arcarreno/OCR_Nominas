@@ -1,0 +1,9 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+.vscode/
+.DS_Store
+Thumbs.db
