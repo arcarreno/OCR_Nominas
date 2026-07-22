@@ -69,6 +69,7 @@ function App() {
   const [validation, setValidation] = useState<ValidationResult | null>(null)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'results' | 'validation' | 'raw'>('results')
+  const [search, setSearch] = useState('')
   const [progress, setProgress] = useState<ProgressInfo | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -180,6 +181,16 @@ function App() {
       setProgress(null)
     }
   }
+
+  const filteredRecibos = result?.recibos.filter(r => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return (
+      r.no_control?.toLowerCase().includes(q) ||
+      r.nombre?.toLowerCase().includes(q) ||
+      r.rfc?.toLowerCase().includes(q)
+    )
+  }) || []
 
   const downloadJSON = () => {
     if (!result) return
@@ -325,25 +336,41 @@ function App() {
               </div>
             )}
 
-            <div className="tabs">
-              <button
-                className={`tab ${activeTab === 'results' ? 'active' : ''}`}
-                onClick={() => setActiveTab('results')}
-              >
-                Resultados
-              </button>
-              <button
-                className={`tab ${activeTab === 'validation' ? 'active' : ''}`}
-                onClick={() => setActiveTab('validation')}
-              >
-                Validacion
-              </button>
-              <button
-                className={`tab ${activeTab === 'raw' ? 'active' : ''}`}
-                onClick={() => setActiveTab('raw')}
-              >
-                Datos Crudos
-              </button>
+            <div className="tabs-row">
+              <div className="tabs">
+                <button
+                  className={`tab ${activeTab === 'results' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('results')}
+                >
+                  Resultados
+                </button>
+                <button
+                  className={`tab ${activeTab === 'validation' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('validation')}
+                >
+                  Validacion
+                </button>
+                <button
+                  className={`tab ${activeTab === 'raw' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('raw')}
+                >
+                  Datos Crudos
+                </button>
+              </div>
+              {activeTab === 'results' && (
+                <div className="search-box">
+                  <input
+                    type="text"
+                    placeholder="Buscar por No.Control, Nombre o RFC..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="search-input"
+                  />
+                  {search && (
+                    <span className="search-count">{filteredRecibos.length} / {result!.recibos.length}</span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="tab-content">
@@ -362,7 +389,7 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {result.recibos.map((r, i) => (
+                      {filteredRecibos.map((r, i) => (
                         <tr key={i}>
                           <td>{r.pagina}</td>
                           <td className="mono">{r.no_control}</td>
