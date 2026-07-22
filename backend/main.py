@@ -39,48 +39,10 @@ app.add_middleware(
 )
 
 
-# ── Pipeline de preprocesamiento ──────────────────────────────────────────────
-
-def rescale_to_height(img, target_height=3000):
-    h, w = img.shape[:2]
-    if h < target_height:
-        scale = target_height / h
-        img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-    return img
-
-
-def deskew(gray):
-    coords = np.column_stack(np.where(gray > 0))
-    if len(coords) < 10:
-        return gray
-    angle = cv2.minAreaRect(coords)[-1]
-    if angle < -45:
-        angle = -(90 + angle)
-    else:
-        angle = -angle
-    if abs(angle) < 0.5:
-        return gray
-    (h, w) = gray.shape[:2]
-    center = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-    return cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-
+# ── Preprocesamiento ──────────────────────────────────────────────────────────
 
 def preprocess_for_ocr(img_pil: Image.Image) -> Image.Image:
-    img = np.array(img_pil)
-    if len(img.shape) == 3:
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-    h, w = img.shape[:2]
-    if h > 1000:
-        scale = 1000 / h
-        img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-
-    binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-    final = cv2.copyMakeBorder(binary, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
-
-    return Image.fromarray(final)
+    return img_pil
 
 
 # ── Extracción de campos ──────────────────────────────────────────────────────
