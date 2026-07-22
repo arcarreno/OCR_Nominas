@@ -124,7 +124,6 @@ function App() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      if (pages.trim()) formData.append('pages', pages.trim())
 
       const url = new URL('/api/ocr/process', API_URL)
       if (pages.trim()) url.searchParams.set('pages', pages.trim())
