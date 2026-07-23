@@ -27,8 +27,24 @@ if errorlevel 1 (
 for /f "tokens=*" %%i in ('node --version 2^>^&1') do echo [OK] Node.js %%i
 
 echo Verificando Tesseract...
+set "TESS_FOUND=0"
 tesseract --version >nul 2>&1
-if errorlevel 1 (
+if not errorlevel 1 (
+    set "TESS_FOUND=1"
+)
+if "%TESS_FOUND%"=="0" (
+    if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" (
+        set "TESS_FOUND=1"
+        set "PATH=C:\Program Files\Tesseract-OCR;%PATH%"
+    )
+)
+if "%TESS_FOUND%"=="0" (
+    if exist "C:\Program Files (x86)\Tesseract-OCR\tesseract.exe" (
+        set "TESS_FOUND=1"
+        set "PATH=C:\Program Files (x86)\Tesseract-OCR;%PATH%"
+    )
+)
+if "%TESS_FOUND%"=="0" (
     echo [ERROR] Tesseract OCR no esta instalado
     echo Descarga: https://github.com/UB-Mannheim/tesseract/wiki
     echo IMPORTANTE: Instala el paquete de idioma "Spanish"

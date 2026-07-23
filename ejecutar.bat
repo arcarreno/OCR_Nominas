@@ -14,6 +14,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" (
+    set "PATH=C:\Program Files\Tesseract-OCR;%PATH%"
+)
+if exist "C:\Program Files (x86)\Tesseract-OCR\tesseract.exe" (
+    set "PATH=C:\Program Files (x86)\Tesseract-OCR;%PATH%"
+)
+
 if not exist "backend\main.py" (
     echo [ERROR] No se encuentra backend\main.py
     pause
