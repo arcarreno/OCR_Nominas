@@ -408,6 +408,10 @@ async def validate_ocr(recibos: list[dict]):
 
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.isdir(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
+if not os.path.isdir(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
 
 if os.path.isdir(STATIC_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")

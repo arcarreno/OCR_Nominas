@@ -88,6 +88,17 @@ if errorlevel 1 (
 echo [OK] Frontend construido
 
 echo.
+echo Copiando frontend al backend...
+if exist "backend\static" rmdir /s /q "backend\static"
+xcopy /e /i /q dist backend\static >nul
+if errorlevel 1 (
+    echo [ERROR] Fallo al copiar archivos al backend
+    pause
+    exit /b 1
+)
+echo [OK] Frontend copiado a backend/static
+
+echo.
 echo ========================================
 echo   INSTALACION COMPLETADA
 echo ========================================

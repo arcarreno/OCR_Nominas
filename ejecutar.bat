@@ -41,7 +41,7 @@ echo ========================================
 echo   APLICACION EN EJECUCION
 echo ========================================
 echo.
-echo   Abre tu navegador en: http://localhost:5173
+echo   Abre tu navegador en: http://localhost:8000
 echo   Arrastra un PDF y presiona "Procesar"
 echo.
 echo   Presiona CUALQUIER TECLA para detener
