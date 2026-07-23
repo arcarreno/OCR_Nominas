@@ -56,7 +56,7 @@ def extract_fields(text: str) -> dict:
     nombre = gx(r'NOMBRE:\s*([A-Za-z\u00C0-\u024F\s]+?)(?:RFC|\||\d|SECRETARIA)')
     rfc = gx(r'RFC:\s*([A-Za-z0-9]{10,13})')
     curp = gx(r'CURP:\s*([A-Za-z0-9]{18})')
-    fecha_pago = gx(r'FECHA PAGO:\s*([\d\.]+)')
+    fecha_pago = gx(r'FECHA PAGO[^:]*:\s*([\d\.,]+)')
     puesto = gx(r'PUESTO:\s*([A-Za-z\u00C0-\u024F\s]+?)(?:\n|PERIODICIDAD)', 1)
     periodicidad = gx(r'PERIODICIDAD\s*:\s*(\S+)')
     periodo = gx(r'PERIODO:(\d+/\d+)')
@@ -74,10 +74,9 @@ def extract_fields(text: str) -> dict:
 
     neto_num = 0.0
     for pat in [
+        r'NETO PAGADO[^)]*\)\s*([\d,]+\.\d{2})',
         r'NETO PAGADO.*?\([^)]*\)\s*([\d,]+\.\d{2})\)',
         r'NETO PAGADO.*?\([^)]*\)\s*([\d,]+\.\d{2})\|',
-        r'NETO PAGADO.*?\([^)]*\)[^)]*([\d,]+\.\d{2})\)',
-        r'NETO PAGADO[^(]*\([^)]*\)\s*([\d,]+\.\d{2})\)',
         r'NETO PAGADO.*?([\d,]+\.\d{2})\)',
         r'NETO PAGADO.*?([\d,]+\.\d{2})\|',
     ]:

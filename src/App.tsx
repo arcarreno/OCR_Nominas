@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 import './App.css'
 
 interface Recibo {
@@ -68,9 +69,11 @@ function App() {
   const [result, setResult] = useState<OCRResult | null>(null)
   const [validation, setValidation] = useState<ValidationResult | null>(null)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'results' | 'validation' | 'raw'>('results')
+  const [activeTab, setActiveTab] = useState<'results' | 'validation' | 'raw' | 'compare'>('results')
   const [search, setSearch] = useState('')
   const [progress, setProgress] = useState<ProgressInfo | null>(null)
+  const [excelControls, setExcelControls] = useState<string[]>([])
+  const [excelFileName, setExcelFileName] = useState('')
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -104,7 +107,7 @@ function App() {
     }
   }, [])
 
-  const API_URL = import.meta.env.VITE_API_URL || window.location.origin
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
   const processPDF = async () => {
     if (!file) return
@@ -125,7 +128,8 @@ function App() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const url = new URL('/api/ocr/process', API_URL)
+      const apiBase = API_URL || window.location.origin
+      const url = new URL('/api/ocr/process', apiBase)
       if (pages.trim()) url.searchParams.set('pages', pages.trim())
 
       const response = await fetch(url.toString(), {
@@ -150,7 +154,7 @@ function App() {
 
       setResult(data)
 
-      const valResponse = await fetch(new URL('/api/ocr/validate', API_URL).toString(), {
+      const valResponse = await fetch(new URL('/api/ocr/validate', apiBase).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data.recibos),
@@ -220,6 +224,36 @@ function App() {
     a.click()
     URL.revokeObjectURL(url)
   }
+
+  const handleExcelUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0]
+    if (!selected) return
+    setExcelFileName(selected.name)
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      const wb = XLSX.read(evt.target?.result, { type: 'binary' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1 })
+      const controls: string[] = []
+      for (const row of data) {
+        const val = row[1]
+        if (val !== undefined && val !== null) {
+          const str = String(val).trim()
+          if (str && /^\d+$/.test(str)) {
+            controls.push(str)
+          }
+        }
+      }
+      setExcelControls(controls)
+    }
+    reader.readAsBinaryString(selected)
+  }, [])
+
+  const controlsEnOCRnoEnExcel = result?.recibos.filter(r => {
+    if (!r.no_control) return false
+    const normalized = r.no_control.replace(/^0+/, '')
+    return !excelControls.some(ec => ec.replace(/^0+/, '') === normalized)
+  }) || []
 
   return (
     <div className="app">
@@ -357,6 +391,12 @@ function App() {
                 >
                   Datos Crudos
                 </button>
+                <button
+                  className={`tab ${activeTab === 'compare' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('compare')}
+                >
+                  Comparacion
+                </button>
               </div>
               {activeTab === 'results' && (
                 <div className="search-box">
@@ -460,6 +500,59 @@ function App() {
                   <pre className="raw-json">
                     {JSON.stringify(result.recibos, null, 2)}
                   </pre>
+                </div>
+              )}
+
+              {activeTab === 'compare' && (
+                <div className="compare-section">
+                  <div className="compare-upload">
+                    <label htmlFor="excel-input" className="compare-label">
+                      Selecciona el Excel de referencia:
+                    </label>
+                    <input
+                      type="file"
+                      id="excel-input"
+                      accept=".xlsx,.xls"
+                      onChange={handleExcelUpload}
+                      hidden
+                    />
+                    <label htmlFor="excel-input" className="compare-file-btn">
+                      Seleccionar archivo
+                    </label>
+                    {excelFileName && (
+                      <span className="compare-file-name">{excelFileName} ({excelControls.length} controles cargados)</span>
+                    )}
+                  </div>
+
+                  {excelControls.length > 0 && (
+                    <>
+                      <div className="compare-summary">
+                        <span className="compare-total">
+                          {controlsEnOCRnoEnExcel.length} controles en OCR pero no en el Excel
+                        </span>
+                      </div>
+                      <table className="results-table">
+                        <thead>
+                          <tr>
+                            <th>Pag</th>
+                            <th>No. Control</th>
+                            <th>Nombre</th>
+                            <th>RFC</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {controlsEnOCRnoEnExcel.map((r, i) => (
+                            <tr key={i}>
+                              <td>{r.pagina}</td>
+                              <td className="mono">{r.no_control}</td>
+                              <td>{r.nombre}</td>
+                              <td className="mono">{r.rfc}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
                 </div>
               )}
             </div>

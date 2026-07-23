@@ -585,6 +585,59 @@ body {
   border-color: var(--accent);
 }
 
+/* Compare Section */
+.compare-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.compare-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compare-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.compare-file-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.compare-file-btn:hover {
+  background: var(--accent-hover);
+}
+
+.compare-file-name {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.compare-summary {
+  padding: 12px 16px;
+  background: rgba(125, 36, 71, 0.08);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.compare-total {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
 /* Footer */
 .footer {
   text-align: center;
