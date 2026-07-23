@@ -12,6 +12,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+import asyncio
+
 import cv2
 import numpy as np
 import pytesseract
@@ -19,7 +21,7 @@ from PIL import Image
 from PyPDF2 import PdfReader
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 _tesseract = shutil.which('tesseract')
@@ -202,6 +204,110 @@ async def process_pdf(
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.post("/api/ocr/process-stream")
+async def process_pdf_stream(
+    file: UploadFile = File(...),
+    pages: Optional[str] = Query(None),
+):
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(400, "Solo se aceptan archivos PDF")
+
+    file_bytes = await file.read()
+
+    async def sse_generator():
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            pdf_path = os.path.join(tmp_dir, file.filename)
+            with open(pdf_path, "wb") as f:
+                f.write(file_bytes)
+
+            reader = PdfReader(pdf_path)
+            total = len(reader.pages)
+
+            page_range = None
+            if pages and pages.strip():
+                p = pages.strip()
+                if '-' in p:
+                    parts = p.split('-', 1)
+                    start = int(parts[0].strip())
+                    end = int(parts[1].strip())
+                    page_range = range(start - 1, min(end, total))
+                elif ',' in p:
+                    page_range = [int(x.strip()) - 1 for x in p.split(',') if 1 <= int(x.strip()) <= total]
+                else:
+                    page_range = [int(p.strip()) - 1]
+
+            if page_range is None:
+                page_range = range(total)
+
+            pages_list = list(page_range)
+            yield f"data: {json.dumps({'type': 'init', 'total_pages': len(pages_list)})}\n\n"
+            await asyncio.sleep(0)
+
+            start_time = time.time()
+            recibos = []
+
+            for idx, i in enumerate(pages_list):
+                page = reader.pages[i]
+                xobj = page['/Resources']['/XObject']
+                for k in xobj:
+                    if xobj[k]['/Subtype'] != '/Image':
+                        continue
+                    data = xobj[k].get_data()
+                    img = Image.open(io.BytesIO(data))
+
+                    img_proc = preprocess_for_ocr(img)
+                    text = pytesseract.image_to_string(img_proc, lang='spa', config='--psm 6')
+
+                    fields = extract_fields(text)
+                    fields['pagina'] = i + 1
+                    recibos.append(fields)
+                    break
+
+                progress_msg = json.dumps({
+                    'type': 'progress',
+                    'pages_processed': idx + 1,
+                    'total_pages': len(pages_list),
+                    'percent': round((idx + 1) / len(pages_list) * 100, 1),
+                    'current_page': i + 1,
+                    'last_control': fields.get('no_control', ''),
+                    'last_nombre': fields.get('nombre', ''),
+                })
+                yield f"data: {progress_msg}\n\n"
+                await asyncio.sleep(0)
+
+            elapsed = time.time() - start_time
+
+            stats = {
+                'total': len(recibos),
+                'no_control': sum(1 for r in recibos if r['no_control']),
+                'nombre': sum(1 for r in recibos if r['nombre']),
+                'rfc': sum(1 for r in recibos if r['rfc']),
+                'curp': sum(1 for r in recibos if r['curp']),
+                'puesto': sum(1 for r in recibos if r['puesto']),
+                'neto': sum(1 for r in recibos if r['neto_pagado'] > 0),
+            }
+
+            total_neto = sum(r['neto_pagado'] for r in recibos)
+
+            result = {
+                "filename": file.filename,
+                "total_pages": total,
+                "processed": len(recibos),
+                "elapsed_seconds": round(elapsed, 1),
+                "stats": stats,
+                "total_neto": round(total_neto, 2),
+                "recibos": recibos,
+            }
+
+            yield f"data: {json.dumps({'type': 'complete', 'result': result})}\n\n"
+
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
 @app.post("/api/ocr/validate")

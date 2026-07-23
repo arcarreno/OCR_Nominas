@@ -129,7 +129,7 @@ function App() {
       formData.append('file', file)
 
       const apiBase = API_URL || window.location.origin
-      const url = new URL('/api/ocr/process', apiBase)
+      const url = new URL('/api/ocr/process-stream', apiBase)
       if (pages.trim()) url.searchParams.set('pages', pages.trim())
 
       const response = await fetch(url.toString(), {
@@ -143,29 +143,63 @@ function App() {
         throw new Error(err.detail || 'Error al procesar el PDF')
       }
 
-      const data: OCRResult = await response.json()
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-      setProgress({
-        percent: 100,
-        message: `OCR completado. ${data.processed} paginas procesadas en ${data.elapsed_seconds}s`,
-        pagesProcessed: data.processed,
-        totalPages: data.total_pages,
-      })
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-      setResult(data)
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n')
+        buffer = parts.pop() || ''
 
-      const valResponse = await fetch(new URL('/api/ocr/validate', apiBase).toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data.recibos),
-      })
+        for (const line of parts) {
+          if (!line.startsWith('data: ')) continue
+          const msg = JSON.parse(line.slice(6))
 
-      if (valResponse.ok) {
-        const valData: ValidationResult = await valResponse.json()
-        setValidation(valData)
+          if (msg.type === 'init') {
+            setProgress({
+              percent: 0,
+              message: 'Iniciando OCR...',
+              pagesProcessed: 0,
+              totalPages: msg.total_pages,
+            })
+          } else if (msg.type === 'progress') {
+            setProgress({
+              percent: msg.percent,
+              message: `Procesando pagina ${msg.current_page}...`,
+              pagesProcessed: msg.pages_processed,
+              totalPages: msg.total_pages,
+            })
+          } else if (msg.type === 'complete') {
+            const data: OCRResult = msg.result
+
+            setProgress({
+              percent: 100,
+              message: `OCR completado. ${data.processed} paginas procesadas en ${data.elapsed_seconds}s`,
+              pagesProcessed: data.processed,
+              totalPages: data.total_pages,
+            })
+
+            setResult(data)
+
+            const valResponse = await fetch(new URL('/api/ocr/validate', apiBase).toString(), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data.recibos),
+            })
+
+            if (valResponse.ok) {
+              const valData: ValidationResult = await valResponse.json()
+              setValidation(valData)
+            }
+
+            setTimeout(() => setProgress(null), 4000)
+          }
+        }
       }
-
-      setTimeout(() => setProgress(null), 4000)
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
