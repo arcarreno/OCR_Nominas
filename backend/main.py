@@ -299,8 +299,6 @@ async def validate_ocr(recibos: list[dict]):
     }
 
 
-import os
-
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 if __name__ == "__main__":
