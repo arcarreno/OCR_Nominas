@@ -409,13 +409,13 @@ async def validate_ocr(recibos: list[dict]):
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
+if os.path.isdir(STATIC_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
+
+    @app.get("/{path:path}")
+    async def serve_spa(path: str):
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-else:
-    if os.path.isdir(STATIC_DIR):
-        app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
-
-        @app.get("/{path:path}")
-        async def serve_spa(path: str):
-            return FileResponse(os.path.join(STATIC_DIR, "index.html"))

@@ -34,7 +34,7 @@ echo Esperando a que el servidor arranque...
 timeout /t 4 /nobreak >nul
 
 echo Abriendo navegador...
-start http://localhost:5173
+start http://localhost:8000
 
 echo.
 echo ========================================
