@@ -33,6 +33,7 @@ else:
 # ── TESSDATA / idioma ─────────────────────────────────────────────────────────
 _TESSDATA_CANDIDATES = [
     os.environ.get('TESSDATA_PREFIX', ''),
+    os.path.join(os.environ.get('LAUNCHER_BASE', ''), 'tesseract', 'tessdata'),
     os.path.join(os.path.dirname(pytesseract.pytesseract.tesseract_cmd), 'tessdata'),
     r'C:\Program Files\Tesseract-OCR\tessdata',
     r'C:\Program Files (x86)\Tesseract-OCR\tessdata',
@@ -428,7 +429,12 @@ async def validate_ocr(recibos: list[dict]):
     }
 
 
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+_BASE_DIR = os.environ.get('LAUNCHER_BASE', os.path.dirname(__file__))
+STATIC_DIR = os.path.join(_BASE_DIR, "static")
+if not os.path.isdir(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.isdir(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
 if not os.path.isdir(STATIC_DIR):
     STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
 if not os.path.isdir(STATIC_DIR):
