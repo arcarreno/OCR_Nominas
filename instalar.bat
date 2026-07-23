@@ -53,6 +53,16 @@ if "%TESS_FOUND%"=="0" (
 )
 echo [OK] Tesseract encontrado
 
+echo Verificando idioma espanol...
+set "SPA_FOUND=0"
+if exist "C:\Program Files\Tesseract-OCR\tessdata\spa.traineddata" set "SPA_FOUND=1"
+if exist "C:\Program Files (x86)\Tesseract-OCR\tessdata\spa.traineddata" set "SPA_FOUND=1"
+if "%SPA_FOUND%"=="1" (
+    echo [OK] Idioma espanol disponible
+) else (
+    echo [AVISO] Idioma espanol no encontrado - el OCR usara ingles como respaldo
+)
+
 echo.
 echo Todos los prerequisitos OK
 echo.

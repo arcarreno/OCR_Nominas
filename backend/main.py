@@ -30,6 +30,27 @@ if _tesseract:
 else:
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+# ── TESSDATA / idioma ─────────────────────────────────────────────────────────
+_TESSDATA_CANDIDATES = [
+    os.environ.get('TESSDATA_PREFIX', ''),
+    os.path.join(os.path.dirname(pytesseract.pytesseract.tesseract_cmd), 'tessdata'),
+    r'C:\Program Files\Tesseract-OCR\tessdata',
+    r'C:\Program Files (x86)\Tesseract-OCR\tessdata',
+    '/usr/share/tesseract-ocr/4.00/tessdata',
+    '/usr/share/tesseract-ocr/5.00/tessdata',
+]
+_OCR_LANG = 'spa'
+for d in _TESSDATA_CANDIDATES:
+    if d and os.path.isfile(os.path.join(d, f'{_OCR_LANG}.traineddata')):
+        os.environ['TESSDATA_PREFIX'] = d
+        break
+else:
+    for d in _TESSDATA_CANDIDATES:
+        if d and os.path.isfile(os.path.join(d, 'eng.traineddata')):
+            os.environ['TESSDATA_PREFIX'] = d
+            _OCR_LANG = 'eng'
+            break
+
 app = FastAPI(title="OCR Recibos API", version="1.0.0")
 
 app.add_middleware(
@@ -173,7 +194,7 @@ async def process_pdf(
                 img = Image.open(io.BytesIO(data))
 
                 img_proc = preprocess_for_ocr(img)
-                text = pytesseract.image_to_string(img_proc, lang='spa', config='--psm 6')
+                text = pytesseract.image_to_string(img_proc, lang=_OCR_LANG, config='--psm 6')
 
                 fields = extract_fields(text)
                 fields['pagina'] = i + 1
@@ -261,7 +282,7 @@ async def process_pdf_stream(
                     img = Image.open(io.BytesIO(data))
 
                     img_proc = preprocess_for_ocr(img)
-                    text = pytesseract.image_to_string(img_proc, lang='spa', config='--psm 6')
+                    text = pytesseract.image_to_string(img_proc, lang=_OCR_LANG, config='--psm 6')
 
                     fields = extract_fields(text)
                     fields['pagina'] = i + 1
