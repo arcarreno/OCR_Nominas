@@ -56,9 +56,11 @@ def extract_fields(text: str) -> dict:
 
     no_control = gx(r'CONTROL:\s*(\d+)')
     nombre = gx(r'NOMBRE:\s*([A-Za-z\u00C0-\u024F\s]+?)(?:RFC|\||\d|SECRETARIA)')
-    rfc = gx(r'RFC:\s*([A-Za-z0-9]{10,13})')
-    curp = gx(r'CURP:\s*([A-Za-z0-9]{18})')
-    fecha_pago = gx(r'FECHA PAGO[^:]*:\s*([\d\.,]+)')
+    rfc_raw = gx(r'RFC:\s*([A-Za-z0-9]{10,13})')
+    rfc = rfc_raw.replace('O', '0').replace('I', '1') if rfc_raw else ''
+    curp_raw = gx(r'CURP:\s*([A-Za-z0-9]{17,18})')
+    curp = curp_raw.replace('O', '0').replace('I', '1') if curp_raw else ''
+    fecha_pago = gx(r'FECHA PAGO[^:]*:\s*([\d\.,]+)').replace(',', '.')
     puesto = gx(r'PUESTO:\s*([A-Za-z\u00C0-\u024F\s]+?)(?:\n|PERIODICIDAD)', 1)
     periodicidad = gx(r'PERIODICIDAD\s*:\s*(\S+)')
     periodo = gx(r'PERIODO:(\d+/\d+)')
