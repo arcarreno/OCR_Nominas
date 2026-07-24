@@ -1,75 +1,73 @@
-# React + TypeScript + Vite
+# OCR Nominas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicacion de escritorio para extraer y validar datos de recibos de nomina (PDF) mediante OCR.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Backend**: Python + FastAPI + Uvicorn
+- **Frontend**: React + TypeScript + Vite
+- **OCR**: Tesseract 5 + pytesseract + OpenCV
+- **PDF**: PyPDF2
+- **Empaquetado**: PyInstaller + Inno Setup
 
-## React Compiler
+## Requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Windows 10/11 64-bit
+- Tesseract OCR 5+ con idioma espanol (incluido en el instalador)
 
-## Expanding the ESLint configuration
+## Instalacion
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Opcion 1: Instalador (recomendado)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Ejecutar `OCRNominas-Installer.exe` como administrador y seguir el wizard.
+Incluye Tesseract OCR + espanol. No requiere nada adicional.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Opcion 2: Portable
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Tener Python 3.10+ y Node.js 18+ instalados
+2. Ejecutar `instalar.bat` (configura todo automaticamente)
+3. Ejecutar `ejecutar.bat` para iniciar el servidor
 
+### Opcion 3: Desarrollo
+
+```bash
+# Backend
+cd backend
+pip install -r requirements.txt
+python main.py
+
+# Frontend (otra terminal)
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Uso
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Abrir `http://localhost:8000`
+2. Subir un archivo PDF con recibos de nomina
+3. La app extrae automaticamente: nombre, RFC, CURP, fecha de pago, puesto, percepciones, deducciones, neto
+4. Validacion contra formato oficial (RFC, CURP, NSS, CP, catalogo de puestos)
+5. Exportar resultados a Excel
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Estructura
 
 ```
+OCR/
+  backend/          # API FastAPI
+    main.py         # Endpoints y logica OCR
+    requirements.txt
+  src/              # Frontend React
+  launcher.py       # Entry point del .exe
+  instalar.bat      # Setup automatico
+  ejecutar.bat      # Inicio rapido
+  portable.bat      # Build portable
+  build_exe.bat     # Build .exe con PyInstaller
+  installer.iss     # Script Inno Setup
+  dist/
+    OCRNominas/     # .exe portable (PyInstaller)
+    installer/      # Instalador (Inno Setup)
+```
+
+## Credenciales
+
+No requiere autenticacion. Corre unicamente en localhost.
